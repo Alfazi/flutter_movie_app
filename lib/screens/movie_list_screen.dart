@@ -12,6 +12,21 @@ class MovieListScreen extends StatefulWidget {
   State<MovieListScreen> createState() => _MovieListScreenState();
 }
 
+enum SortOption {
+  popularityDesc('Most Popular ↓', 'Most Popular First'),
+  popularityAsc('Least Popular ↑', 'Least Popular First'),
+  ratingDesc('Highest Rating ↓', 'Highest Rated First'),
+  ratingAsc('Lowest Rating ↑', 'Lowest Rated First'),
+  releaseDateDesc('Release Date ↓', 'Newest First'),
+  releaseDateAsc('Release Date ↑', 'Oldest First'),
+  titleAsc('Title A-Z', 'Alphabetical'),
+  titleDesc('Title Z-A', 'Reverse Alphabetical');
+
+  final String label;
+  final String description;
+  const SortOption(this.label, this.description);
+}
+
 class _MovieListScreenState extends State<MovieListScreen> {
   final MovieService _movieService = MovieService();
   final PagingController<int, Movie> _pagingController = PagingController(
@@ -21,6 +36,7 @@ class _MovieListScreenState extends State<MovieListScreen> {
 
   String _searchQuery = '';
   bool _isSearching = false;
+  SortOption _currentSort = SortOption.popularityDesc;
 
   @override
   void initState() {
@@ -36,16 +52,151 @@ class _MovieListScreenState extends State<MovieListScreen> {
           ? await _movieService.getPopularMovies(pageKey)
           : await _movieService.searchMovies(_searchQuery, pageKey);
 
+      var sortedResults = List<Movie>.from(movieResponse.results);
+      _applySorting(sortedResults);
+
       final isLastPage = pageKey >= movieResponse.totalPages;
 
       if (isLastPage) {
-        _pagingController.appendLastPage(movieResponse.results);
+        _pagingController.appendLastPage(sortedResults);
       } else {
         final nextPageKey = pageKey + 1;
-        _pagingController.appendPage(movieResponse.results, nextPageKey);
+        _pagingController.appendPage(sortedResults, nextPageKey);
       }
     } catch (error) {
       _pagingController.error = error;
+    }
+  }
+
+  void _applySorting(List<Movie> movies) {
+    switch (_currentSort) {
+      case SortOption.popularityDesc:
+        movies.sort((a, b) => b.popularity.compareTo(a.popularity));
+        break;
+      case SortOption.popularityAsc:
+        movies.sort((a, b) => a.popularity.compareTo(b.popularity));
+        break;
+      case SortOption.ratingDesc:
+        movies.sort((a, b) => b.voteAverage.compareTo(a.voteAverage));
+        break;
+      case SortOption.ratingAsc:
+        movies.sort((a, b) => a.voteAverage.compareTo(b.voteAverage));
+        break;
+      case SortOption.releaseDateDesc:
+        movies.sort((a, b) => b.releaseDate.compareTo(a.releaseDate));
+        break;
+      case SortOption.releaseDateAsc:
+        movies.sort((a, b) => a.releaseDate.compareTo(b.releaseDate));
+        break;
+      case SortOption.titleAsc:
+        movies.sort((a, b) => a.title.compareTo(b.title));
+        break;
+      case SortOption.titleDesc:
+        movies.sort((a, b) => b.title.compareTo(a.title));
+        break;
+    }
+  }
+
+  void _changeSortOption(SortOption newSort) {
+    setState(() {
+      _currentSort = newSort;
+      _pagingController.refresh();
+    });
+  }
+
+  void _showSortOptions() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF1E293B),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SingleChildScrollView(
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[600],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  child: Row(
+                    children: [
+                      Icon(Icons.sort, color: Colors.amber),
+                      SizedBox(width: 12),
+                      Text(
+                        'Sort Movies By',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(color: Colors.grey),
+                ...SortOption.values.map((option) {
+                  final isSelected = _currentSort == option;
+                  return ListTile(
+                    leading: Icon(
+                      _getSortIcon(option),
+                      color: isSelected ? Colors.amber : Colors.grey,
+                    ),
+                    title: Text(
+                      option.label,
+                      style: TextStyle(
+                        color: isSelected ? Colors.amber : Colors.white,
+                        fontWeight: isSelected
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                      ),
+                    ),
+                    subtitle: Text(
+                      option.description,
+                      style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                    ),
+                    trailing: isSelected
+                        ? const Icon(Icons.check_circle, color: Colors.amber)
+                        : null,
+                    onTap: () {
+                      Navigator.pop(context);
+                      _changeSortOption(option);
+                    },
+                  );
+                }).toList(),
+                const SizedBox(height: 10),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  IconData _getSortIcon(SortOption option) {
+    switch (option) {
+      case SortOption.popularityDesc:
+      case SortOption.popularityAsc:
+        return Icons.trending_up;
+      case SortOption.ratingDesc:
+      case SortOption.ratingAsc:
+        return Icons.star;
+      case SortOption.releaseDateDesc:
+      case SortOption.releaseDateAsc:
+        return Icons.calendar_today;
+      case SortOption.titleAsc:
+      case SortOption.titleDesc:
+        return Icons.sort_by_alpha;
     }
   }
 
@@ -70,18 +221,44 @@ class _MovieListScreenState extends State<MovieListScreen> {
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            expandedHeight: 120,
+            expandedHeight: 80,
             floating: false,
             pinned: true,
             backgroundColor: const Color(0xFF1E293B),
             flexibleSpace: FlexibleSpaceBar(
-              title: Text(
-                _isSearching ? 'Search Movies' : 'Popular Movies',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
-                ),
+              titlePadding: const EdgeInsets.only(
+                left: 16,
+                bottom: 16,
+                right: 16,
+              ),
+              title: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      _isSearching ? 'Search Movies' : 'Movie Database',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                      ),
+                    ),
+                  ),
+                  InkWell(
+                    onTap: () {
+                      setState(() {
+                        _isSearching = !_isSearching;
+                        if (!_isSearching) {
+                          _searchController.clear();
+                          _performSearch('');
+                        }
+                      });
+                    },
+                    child: Icon(
+                      _isSearching ? Icons.close : Icons.search,
+                      size: 24,
+                    ),
+                  ),
+                ],
               ),
               background: Container(
                 decoration: BoxDecoration(
@@ -93,20 +270,6 @@ class _MovieListScreenState extends State<MovieListScreen> {
                 ),
               ),
             ),
-            actions: [
-              IconButton(
-                icon: Icon(_isSearching ? Icons.close : Icons.search),
-                onPressed: () {
-                  setState(() {
-                    _isSearching = !_isSearching;
-                    if (!_isSearching) {
-                      _searchController.clear();
-                      _performSearch('');
-                    }
-                  });
-                },
-              ),
-            ],
           ),
           if (_isSearching)
             SliverToBoxAdapter(
@@ -134,6 +297,34 @@ class _MovieListScreenState extends State<MovieListScreen> {
                 ),
               ),
             ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                children: [
+                  Icon(
+                    _getSortIcon(_currentSort),
+                    color: Colors.amber,
+                    size: 16,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Sorted by: ${_currentSort.label}',
+                    style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                  ),
+                  const Spacer(),
+                  TextButton.icon(
+                    onPressed: _showSortOptions,
+                    icon: const Icon(Icons.tune, size: 16, color: Colors.amber),
+                    label: const Text(
+                      'Change',
+                      style: TextStyle(color: Colors.amber, fontSize: 12),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
           PagedSliverList<int, Movie>(
             pagingController: _pagingController,
             builderDelegate: PagedChildBuilderDelegate<Movie>(

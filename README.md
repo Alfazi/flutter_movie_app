@@ -1,0 +1,1 @@
+note : ubah API_KEY di core/constant/api_constant.dart jadi API key yang valid
