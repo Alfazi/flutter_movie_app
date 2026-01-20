@@ -21,10 +21,14 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
   @override
   void initState() {
     super.initState();
+    print(
+      '[MOVIE_DETAIL] Screen initialized for movie ID: ${widget.movieId}',
+    );
     _loadMovieDetails();
   }
 
   Future<void> _loadMovieDetails() async {
+    print('[MOVIE_DETAIL] Loading movie details for ID: ${widget.movieId}');
     try {
       setState(() {
         _isLoading = true;
@@ -32,12 +36,16 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
       });
 
       final movieDetail = await _movieService.getMovieDetails(widget.movieId);
+      print(
+        '[MOVIE_DETAIL] Movie details loaded successfully: ${movieDetail.title}',
+      );
 
       setState(() {
         _movieDetail = movieDetail;
         _isLoading = false;
       });
     } catch (e) {
+      print('[MOVIE_DETAIL] Failed to load movie details: $e');
       setState(() {
         _error = e.toString();
         _isLoading = false;

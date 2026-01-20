@@ -41,29 +41,47 @@ class _MovieListScreenState extends State<MovieListScreen> {
   @override
   void initState() {
     super.initState();
+    print('[MOVIE_LIST] Screen initialized');
     _pagingController.addPageRequestListener((pageKey) {
+      print('[MOVIE_LIST] Page request listener triggered - Page: $pageKey');
       _fetchPage(pageKey);
     });
   }
 
   Future<void> _fetchPage(int pageKey) async {
+    print('[MOVIE_LIST] Fetching page $pageKey');
+    print(
+      '   ├─ Search query: "${_searchQuery.isEmpty ? "(empty - showing popular)" : _searchQuery}"',
+    );
+    print('   └─ Sort: ${_currentSort.label}');
     try {
       final movieResponse = _searchQuery.isEmpty
           ? await _movieService.getPopularMovies(pageKey)
           : await _movieService.searchMovies(_searchQuery, pageKey);
 
       var sortedResults = List<Movie>.from(movieResponse.results);
+      print('[MOVIE_LIST] Applying sort: ${_currentSort.label}');
       _applySorting(sortedResults);
 
       final isLastPage = pageKey >= movieResponse.totalPages;
+      print(
+        '[MOVIE_LIST] Page status: ${isLastPage ? "Last page" : "More pages available"}',
+      );
 
       if (isLastPage) {
         _pagingController.appendLastPage(sortedResults);
+        print(
+          '[MOVIE_LIST] Appended last page with ${sortedResults.length} movies',
+        );
       } else {
         final nextPageKey = pageKey + 1;
         _pagingController.appendPage(sortedResults, nextPageKey);
+        print(
+          '[MOVIE_LIST] Appended page with ${sortedResults.length} movies, next page: $nextPageKey',
+        );
       }
     } catch (error) {
+      print('[MOVIE_LIST] Error fetching page $pageKey: $error');
       _pagingController.error = error;
     }
   }
@@ -98,6 +116,9 @@ class _MovieListScreenState extends State<MovieListScreen> {
   }
 
   void _changeSortOption(SortOption newSort) {
+    print('[MOVIE_LIST] Changing sort option');
+    print('   ├─ From: ${_currentSort.label}');
+    print('   └─ To: ${newSort.label}');
     setState(() {
       _currentSort = newSort;
       _pagingController.refresh();
