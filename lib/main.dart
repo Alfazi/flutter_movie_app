@@ -1,7 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:get/get.dart';
 import 'screens/movie_list_screen.dart';
+import 'screens/login_screen.dart';
+import 'screens/register_screen.dart';
+import 'screens/rental_list_screen.dart';
+import 'controllers/auth_controller.dart';
+import 'controllers/rental_controller.dart';
+import 'controllers/movie_controller.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  print('[APP] 🚀 Initializing Firebase...');
+  try {
+    await Firebase.initializeApp();
+    print('[APP] ✅ Firebase initialized successfully');
+  } catch (e) {
+    print('[APP] ❌ Firebase initialization error: $e');
+  }
+  
+  print('[APP] 🎮 Initializing GetX Controllers...');
+  Get.put(AuthController());
+  Get.put(RentalController());
+  Get.put(MovieController());
+  print('[APP] ✅ Controllers initialized');
+  
+  print('[APP] 🎬 Application starting...');
   runApp(const MyApp());
 }
 
@@ -10,8 +35,9 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Movie Database',
+    print('[APP] Building GetMaterialApp with dark theme');
+    return GetMaterialApp(
+      title: 'Movie Rental',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.amber,
@@ -19,7 +45,14 @@ class MyApp extends StatelessWidget {
         brightness: Brightness.dark,
         useMaterial3: true,
       ),
-      home: const MovieListScreen(),
+      initialRoute: '/login',
+      getPages: [
+        GetPage(name: '/login', page: () => const LoginScreen()),
+        GetPage(name: '/register', page: () => const RegisterScreen()),
+        GetPage(name: '/home', page: () => const MovieListScreen()),
+        GetPage(name: '/rentals', page: () => const RentalListScreen()),
+      ],
+      home: const LoginScreen(),
     );
   }
 }

@@ -26,17 +26,26 @@ class DioClient {
       InterceptorsWrapper(
         onRequest: (options, handler) {
           options.queryParameters['api_key'] = ApiConstants.apiKey;
-          print('Request: ${options.method} ${options.path}');
+          print('[API] Request: ${options.method} ${options.uri}');
+          print('   ├─ Query params: ${options.queryParameters}');
+          print('   └─ Headers: ${options.headers}');
           return handler.next(options);
         },
         onResponse: (response, handler) {
           print(
-            'Response: ${response.statusCode} ${response.requestOptions.path}',
+            '[API] Response: ${response.statusCode} ${response.requestOptions.path}',
           );
+          print(
+            '   ├─ Status: ${response.statusCode} ${response.statusMessage}',
+          );
+          print('   └─ Data size: ${response.data.toString().length} bytes');
           return handler.next(response);
         },
         onError: (error, handler) {
-          print('Error: ${error.message}');
+          print('[API] Error: ${error.type}');
+          print('   ├─ Message: ${error.message}');
+          print('   ├─ Path: ${error.requestOptions.path}');
+          print('   └─ Status code: ${error.response?.statusCode}');
           return handler.next(error);
         },
       ),
@@ -46,6 +55,7 @@ class DioClient {
   Dio get dio => _dio;
 
   String handleError(DioException error) {
+    print('[ERROR_HANDLER] Processing DioException: ${error.type}');
     String errorMessage = '';
 
     switch (error.type) {
