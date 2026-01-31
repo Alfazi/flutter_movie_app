@@ -196,7 +196,7 @@ class _MovieListScreenState extends State<MovieListScreen> {
                       _changeSortOption(option);
                     },
                   );
-                }).toList(),
+                }),
                 const SizedBox(height: 10),
               ],
             ),
