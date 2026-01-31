@@ -146,7 +146,7 @@ class RentalService {
           .toList();
 
       final activeCount = rentals.where((r) => r.status == RentalStatus.active).length;
-      final totalSpent = rentals.fold<double>(0, (sum, r) => sum + r.totalPrice);
+      final totalSpent = rentals.fold<double>(0, (previousValue, r) => previousValue + r.totalPrice);
       
       final stats = {
         'total': rentals.length,
