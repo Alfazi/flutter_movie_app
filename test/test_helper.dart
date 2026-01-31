@@ -1,8 +1,10 @@
 // test/test_helper.dart
+import 'dart:async';
+
+import 'package:firebase_auth_platform_interface/firebase_auth_platform_interface.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_core_platform_interface/firebase_core_platform_interface.dart';
 import 'package:flutter_test/flutter_test.dart';
-// import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 /// Setup Firebase for testing
 Future<void> setupFirebaseForTests() async {
@@ -13,6 +15,7 @@ Future<void> setupFirebaseForTests() async {
 
 void setupFirebaseMocks() {
   FirebasePlatform.instance = FakeFirebasePlatform();
+  FirebaseAuthPlatform.instance = FakeFirebaseAuthPlatform();
 }
 
 class FakeFirebasePlatform extends FirebasePlatform {
@@ -84,4 +87,67 @@ class FakeFirebaseApp extends FirebaseAppPlatform {
   Future<void> setAutomaticResourceManagementEnabled(bool enabled) async {
     return;
   }
+}
+
+class FakeFirebaseAuthPlatform extends FirebaseAuthPlatform {
+  FakeFirebaseAuthPlatform() : super();
+
+  @override
+  FirebaseAuthPlatform delegateFor({required FirebaseApp app}) {
+    return this;
+  }
+
+  @override
+  FirebaseAuthPlatform setInitialValues({
+    PigeonUserDetails? currentUser,
+    String? languageCode,
+  }) {
+    return this;
+  }
+
+  @override
+  Stream<UserPlatform?> authStateChanges() {
+    return Stream<UserPlatform?>.value(null);
+  }
+
+  @override
+  Stream<UserPlatform?> idTokenChanges() {
+    return Stream<UserPlatform?>.value(null);
+  }
+
+  @override
+  Stream<UserPlatform?> userChanges() {
+    return Stream<UserPlatform?>.value(null);
+  }
+
+  @override
+  Future<UserCredentialPlatform> signInWithEmailAndPassword(
+    String email,
+    String password,
+  ) async {
+    return FakeUserCredential();
+  }
+
+  @override
+  Future<UserCredentialPlatform> createUserWithEmailAndPassword(
+    String email,
+    String password,
+  ) async {
+    return FakeUserCredential();
+  }
+
+  @override
+  Future<void> signOut() async {
+    return;
+  }
+
+  @override
+  UserPlatform? get currentUser => null;
+}
+
+class FakeUserCredential extends UserCredentialPlatform {
+  FakeUserCredential() : super(auth: FakeFirebaseAuthPlatform());
+
+  @override
+  UserPlatform? get user => null;
 }
