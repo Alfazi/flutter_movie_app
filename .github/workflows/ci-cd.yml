@@ -1,0 +1,123 @@
+name: Flutter CI/CD with Firebase App Distribution
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v3
+
+      - name: ☕ Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: 🐦 Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'
+          channel: 'stable'
+
+      - name: 📦 Install dependencies
+        run: flutter pub get
+
+      - name: 🔍 Analyze code
+        run: flutter analyze
+
+      - name: 🧪 Run unit tests
+        run: flutter test --coverage
+
+      - name: 📊 Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage/lcov.info
+          fail_ci_if_error: false
+
+      - name: 📱 Build Android APK
+        env:
+          TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
+        run: flutter build apk --release --dart-define=TMDB_API_KEY=$TMDB_API_KEY
+
+      - name: 📱 Build Android App Bundle
+        env:
+          TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
+        run: flutter build appbundle --release --dart-define=TMDB_API_KEY=$TMDB_API_KEY
+
+      - name: 📤 Upload APK artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+
+      - name: 📤 Upload App Bundle artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: release-aab
+          path: build/app/outputs/bundle/release/app-release.aab
+
+  firebase-distribution:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v3
+
+      - name: ☕ Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: 🐦 Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'
+          channel: 'stable'
+
+      - name: 📦 Install dependencies
+        run: flutter pub get
+
+      - name: 📱 Build Android APK for Firebase
+        run: flutter build apk --release
+
+      - name: 🔥 Upload to Firebase App Distribution
+        uses: wzieba/Firebase-Distribution-Github-Action@v1
+        with:
+          appId: ${{ secrets.FIREBASE_APP_ID }}
+          serviceCredentialsFileContent: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          groups: testers
+          file: build/app/outputs/flutter-apk/app-release.apk
+          releaseNotes: |
+            🎬 Movie Rental App - Automated Build
+            
+            Branch: ${{ github.ref_name }}
+            Commit: ${{ github.sha }}
+            Author: ${{ github.actor }}
+            
+            Changes:
+            ${{ github.event.head_commit.message }}
+
+  notify:
+    needs: [build-and-test, firebase-distribution]
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: 📢 Notify build status
+        run: |
+          if [ "${{ needs.build-and-test.result }}" == "success" ] && [ "${{ needs.firebase-distribution.result }}" == "success" ]; then
+            echo "✅ Build and deployment successful!"
+          else
+            echo "❌ Build or deployment failed!"
+            exit 1
+          fi

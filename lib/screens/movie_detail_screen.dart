@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:get/get.dart';
 import '../data/models/movie_detail.dart';
 import '../data/services/movie_service.dart';
+import '../controllers/rental_controller.dart';
+import 'rent_movie_screen.dart';
 
 class MovieDetailScreen extends StatefulWidget {
   final int movieId;
@@ -14,16 +17,16 @@ class MovieDetailScreen extends StatefulWidget {
 
 class _MovieDetailScreenState extends State<MovieDetailScreen> {
   final MovieService _movieService = MovieService();
+  final RentalController _rentalController = Get.find<RentalController>();
   MovieDetail? _movieDetail;
   bool _isLoading = true;
   String? _error;
+  bool _isMovieRented = false;
 
   @override
   void initState() {
     super.initState();
-    print(
-      '[MOVIE_DETAIL] Screen initialized for movie ID: ${widget.movieId}',
-    );
+    print('[MOVIE_DETAIL] Screen initialized for movie ID: ${widget.movieId}');
     _loadMovieDetails();
   }
 
@@ -36,12 +39,18 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
       });
 
       final movieDetail = await _movieService.getMovieDetails(widget.movieId);
+      final isRented = await _rentalController.checkIfMovieRented(
+        widget.movieId,
+      );
+
       print(
         '[MOVIE_DETAIL] Movie details loaded successfully: ${movieDetail.title}',
       );
+      print('[MOVIE_DETAIL] Movie rented status: $isRented');
 
       setState(() {
         _movieDetail = movieDetail;
+        _isMovieRented = isRented;
         _isLoading = false;
       });
     } catch (e) {
@@ -319,6 +328,45 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                       ),
                     ),
                   ],
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: _isMovieRented
+                        ? null
+                        : () {
+                            Get.to(
+                              () => RentMovieScreen(
+                                movieDetail: _movieDetail!,
+                              ),
+                            );
+                          },
+                    icon: Icon(
+                      _isMovieRented
+                          ? Icons.check_circle
+                          : Icons.movie_filter,
+                    ),
+                    label: Text(
+                      _isMovieRented
+                          ? 'Already Rented'
+                          : 'Rent This Movie',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _isMovieRented
+                          ? Colors.grey
+                          : Colors.amber,
+                      foregroundColor: Colors.black,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 24),
                 if (_movieDetail!.genres.isNotEmpty) ...[

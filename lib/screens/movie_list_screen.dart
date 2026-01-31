@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:get/get.dart';
 import '../data/models/movie.dart';
 import '../data/services/movie_service.dart';
 import 'movie_detail_screen.dart';
+import 'rental_list_screen.dart';
 
 class MovieListScreen extends StatefulWidget {
   const MovieListScreen({super.key});
@@ -264,6 +266,17 @@ class _MovieListScreenState extends State<MovieListScreen> {
                       ),
                     ),
                   ),
+                  InkWell(
+                    onTap: () {
+                      Get.to(() => const RentalListScreen());
+                    },
+                    child: const Icon(
+                      Icons.movie_filter,
+                      color: Colors.amber,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
                   InkWell(
                     onTap: () {
                       setState(() {
