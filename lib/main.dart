@@ -8,10 +8,13 @@ import 'screens/rental_list_screen.dart';
 import 'controllers/auth_controller.dart';
 import 'controllers/rental_controller.dart';
 import 'controllers/movie_controller.dart';
+import 'data/services/movie_service.dart';
+import 'data/services/auth_service.dart';
+import 'data/services/rental_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   print('[APP] 🚀 Initializing Firebase...');
   try {
     await Firebase.initializeApp();
@@ -19,13 +22,17 @@ void main() async {
   } catch (e) {
     print('[APP] ❌ Firebase initialization error: $e');
   }
-  
-  print('[APP] 🎮 Initializing GetX Controllers...');
+
+  print('[APP] 🎮 Initializing Services and Controllers...');
+  Get.put(MovieService());
+  Get.put(AuthService());
+  Get.put(RentalService());
+
   Get.put(AuthController());
   Get.put(RentalController());
   Get.put(MovieController());
-  print('[APP] ✅ Controllers initialized');
-  
+  print('[APP] ✅ Services and Controllers initialized');
+
   print('[APP] 🎬 Application starting...');
   runApp(const MyApp());
 }

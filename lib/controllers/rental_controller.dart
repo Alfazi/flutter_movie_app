@@ -4,9 +4,9 @@ import '../data/services/rental_service.dart';
 import 'auth_controller.dart';
 
 class RentalController extends GetxController {
-  final RentalService _rentalService = RentalService();
+  final RentalService _rentalService = Get.find<RentalService>();
   final AuthController _authController = Get.find<AuthController>();
-  
+
   final RxList<Rental> rentals = <Rental>[].obs;
   final RxList<Rental> activeRentals = <Rental>[].obs;
   final RxBool isLoading = false.obs;
@@ -30,7 +30,7 @@ class RentalController extends GetxController {
     }
 
     print('[RENTAL_CONTROLLER] Loading rentals for user: $userId');
-    
+
     _rentalService.getUserRentals(userId).listen((rentalList) {
       rentals.value = rentalList;
       print('[RENTAL_CONTROLLER] Loaded ${rentalList.length} rental(s)');
@@ -49,7 +49,7 @@ class RentalController extends GetxController {
     if (userId == null) return;
 
     print('[RENTAL_CONTROLLER] Loading active rentals for user: $userId');
-    
+
     _rentalService.getActiveRentals(userId).listen((rentalList) {
       activeRentals.value = rentalList;
       print('[RENTAL_CONTROLLER] Loaded ${rentalList.length} active rental(s)');
@@ -61,7 +61,7 @@ class RentalController extends GetxController {
     if (userId == null) return;
 
     print('[RENTAL_CONTROLLER] Loading rental statistics');
-    
+
     try {
       final statistics = await _rentalService.getRentalStats(userId);
       stats.value = statistics;
@@ -97,7 +97,8 @@ class RentalController extends GetxController {
       isLoading.value = true;
 
       // Check if movie is already rented
-      final isAlreadyRented = await _rentalService.isMovieRented(movieId, userId);
+      final isAlreadyRented =
+          await _rentalService.isMovieRented(movieId, userId);
       if (isAlreadyRented) {
         print('[RENTAL_CONTROLLER] Movie already rented');
         Get.snackbar(
@@ -117,7 +118,7 @@ class RentalController extends GetxController {
       );
 
       print('[RENTAL_CONTROLLER] Movie rented successfully');
-      
+
       Get.snackbar(
         'Success',
         'Movie rented successfully!',
@@ -126,7 +127,7 @@ class RentalController extends GetxController {
 
       loadRentals();
       loadStats();
-      
+
       return true;
     } catch (e) {
       print('[RENTAL_CONTROLLER] Error renting movie: $e');
@@ -143,14 +144,14 @@ class RentalController extends GetxController {
 
   Future<void> returnRental(String rentalId) async {
     print('[RENTAL_CONTROLLER] Returning rental: $rentalId');
-    
+
     try {
       isLoading.value = true;
-      
+
       await _rentalService.returnRental(rentalId);
-      
+
       print('[RENTAL_CONTROLLER] Rental returned successfully');
-      
+
       Get.snackbar(
         'Success',
         'Movie returned successfully!',

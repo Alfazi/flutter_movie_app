@@ -29,14 +29,13 @@ jobs:
       - name: 📦 Install dependencies
         run: flutter pub get
 
-      - name: 🏗️ Generate mock files
-        run: dart run build_runner build --delete-conflicting-outputs
-
       - name: 🔍 Analyze code
         run: flutter analyze
 
       - name: 🧪 Run unit tests
-        run: flutter test --coverage
+        env:
+          TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
+        run: flutter test --coverage --dart-define=TMDB_API_KEY=$TMDB_API_KEY
 
       - name: 📊 Upload coverage to Codecov
         uses: codecov/codecov-action@v4

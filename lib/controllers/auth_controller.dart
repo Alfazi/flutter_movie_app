@@ -4,7 +4,7 @@ import '../data/services/auth_service.dart';
 import '../data/models/user_model.dart';
 
 class AuthController extends GetxController {
-  final AuthService _authService = AuthService();
+  final AuthService _authService = Get.find<AuthService>();
 
   final Rx<User?> _firebaseUser = Rx<User?>(null);
   final Rx<UserModel?> _userModel = Rx<UserModel?>(null);
